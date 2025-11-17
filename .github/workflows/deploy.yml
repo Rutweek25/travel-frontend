@@ -35,6 +35,12 @@ jobs:
           echo "No build output directory found (expected 'build/' or 'dist/')." >&2
           exit 1
 
+      - name: Set up 404.html for SPA routing
+        run: |
+          if [ -f "${{ steps.publishdir.outputs.publish_dir }}/index.html" ]; then
+            cp "${{ steps.publishdir.outputs.publish_dir }}/index.html" "${{ steps.publishdir.outputs.publish_dir }}/404.html"
+          fi
+
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
