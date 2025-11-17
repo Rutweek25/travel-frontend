@@ -1,0 +1,46 @@
+name: Build and Deploy Frontend
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+
+      - name: Build
+        run: |
+          npm run build
+
+      - name: Determine publish directory
+        id: publishdir
+        run: |
+          if [ -d "build" ]; then echo "publish_dir=build" >> $GITHUB_OUTPUT; elif [ -d "dist" ]; then echo "publish_dir=dist" >> $GITHUB_OUTPUT; else echo "publish_dir=" >> $GITHUB_OUTPUT; fi
+
+      - name: Fail if build output not found
+        if: steps.publishdir.outputs.publish_dir == ''
+        run: |
+          echo "No build output directory found (expected 'build/' or 'dist/')." >&2
+          exit 1
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ${{ steps.publishdir.outputs.publish_dir }}
+
+      - name: Print published URL
+        run: |
+          echo "Your site should be available at https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
